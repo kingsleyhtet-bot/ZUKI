@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZUKI</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f0f1a;
+  --card:#1c1c2e;
+  --accent:#ff6f3c;
+  --text:#ffffff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Roboto;background:var(--bg);color:var(--text)}
+
+header{
+  display:flex;justify-content:center;align-items:center;
+  gap:16px;margin:20px;font-size:32px;font-weight:bold;
+  color:var(--accent);
+}
+#devBtn{
+  background:none;border:1px solid var(--accent);
+  color:var(--accent);padding:6px 12px;border-radius:8px;
+  cursor:pointer;font-size:14px;
+}
+
+.genre-top{
+  display:flex;gap:12px;overflow-x:auto;
+  padding:10px 16px;
+}
+.genre-item{
+  padding:8px 18px;border-radius:20px;
+  background:#272741;cursor:pointer;
+}
+.genre-item.active{background:var(--accent);color:#000}
+
+.search-wrap{padding:0 16px 12px}
+#searchInput{
+  width:100%;padding:12px 16px;border-radius:25px;
+  border:none;outline:none;background:#1c1c2e;
+  color:#fff;
+}
+
+.main{padding:16px}
+.movie-grid{display:flex;gap:16px;overflow-x:auto;flex-wrap:wrap}
+.movie-card{width:150px;position:relative;flex:0 0 auto;text-align:center}
+.movie-card img{
+  width:100%;aspect-ratio:2/3;
+  object-fit:cover;border-radius:12px;
+}
+.movie-card .title{
+  margin-top:6px;font-size:14px;font-weight:bold;
+}
+
+.genre-label{
+  position:absolute;top:8px;left:8px;
+  background:var(--accent);color:#000;
+  padding:4px 10px;border-radius:20px;font-size:12px;
+}
+
+.option-btn{
+  position:absolute;top:8px;right:8px;
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(0,0,0,.6);border:none;
+  color:#fff;cursor:pointer;
+}
+
+.option-menu{
+  position:absolute;top:36px;right:8px;
+  background:#272741;border-radius:10px;display:none;
+}
+.option-menu button{
+  background:none;border:none;color:#fff;
+  padding:8px 14px;width:100%;cursor:pointer;
+}
+.option-menu button:hover{
+  background:var(--accent);color:#000;
+}
+
+/* MODAL */
+.modal{
+  display:none;position:fixed;inset:0;
+  backdrop-filter:blur(10px);
+  background:rgba(0,0,0,.7);
+  justify-content:center;align-items:center;
+}
+.modal-content{
+  background:#272741;padding:20px;border-radius:15px;
+  width:90%;max-width:420px;text-align:center;
+  position:relative;
+}
+.close-btn{
+  position:absolute;top:10px;right:15px;
+  font-size:26px;color:var(--accent);cursor:pointer;
+}
+.modal-content img{
+  width:70%;max-width:260px;border-radius:12px;
+  margin-bottom:12px;
+}
+
+.movie-links{
+  display:flex;justify-content:center;
+  gap:12px;margin-top:14px;
+}
+.movie-links button{
+  padding:10px 22px;border:none;
+  border-radius:25px;background:var(--accent);
+  font-weight:bold;cursor:pointer;
+}
+.movie-links button:disabled{
+  opacity:.4;cursor:not-allowed;
+}
+
+/* DEV */
+#devForm{
+  display:none;margin:20px auto;padding:20px;
+  max-width:600px;background:#272741;
+  border-radius:12px;
+}
+#devForm input,#devForm select,#devForm textarea{
+  width:100%;margin-bottom:10px;padding:10px;
+  background:#1c1c2e;border:none;border-radius:8px;
+  color:#fff;
+}
+#devForm button{
+  width:100%;padding:12px;border:none;
+  border-radius:10px;background:var(--accent);
+  font-weight:bold;cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<header>
+  ZUKI
+  <button id="devBtn">Developer</button>
+</header>
+
+<div class="genre-top" id="genreTop"></div>
+
+<div class="search-wrap">
+  <input id="searchInput" placeholder="Search movies..." oninput="searchMovies()">
+</div>
+
+<div class="main">
+  <div class="movie-grid" id="movieGrid"></div>
+</div>
+
+<div id="devForm">
+  <h3>Add / Edit Movie</h3>
+  <input id="title" placeholder="Movie title">
+  <select id="genre"></select>
+  <input id="poster" placeholder="Poster URL (optional)">
+  <textarea id="review" placeholder="Review"></textarea>
+  <input id="l1080" placeholder="1080p Telegram link">
+  <input id="l720" placeholder="720p Telegram link">
+  <button onclick="saveMovie()">Save Movie</button>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="modal.style.display='none'">×</span>
+    <img id="mPoster">
+    <h2 id="mTitle"></h2>
+    <p id="mReview"></p>
+    <div class="movie-links">
+      <button id="btn1080" onclick="openLink('1080p')">1080p</button>
+      <button id="btn720" onclick="openLink('720p')">720p</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+// Firebase config
+firebase.initializeApp({
+  databaseURL:"https://zuki-75-19-default-rtdb.asia-southeast1.firebasedatabase.app"
+});
+
+const db = firebase.database().ref("movies");
+const adminPassword = "POEPOE7519";
+const genres = ["All","Action","Drama","Anime","Horror","Comedy","Cartoon","Thriller","Mystery"];
+let isAdmin=false, allMovies=[], currentMovie=null, editKey=null;
+
+// GENRES
+genres.forEach((g,i)=>{
+  const d=document.createElement("div");
+  d.className="genre-item"+(i==0?" active":"");
+  d.textContent=g;
+  d.onclick=()=>{
+    document.querySelectorAll(".genre-item").forEach(x=>x.classList.remove("active"));
+    d.classList.add("active");
+    render();
+  };
+  genreTop.appendChild(d);
+  if(g!="All") genre.innerHTML+=`<option>${g}</option>`;
+});
+
+// REAL-TIME LISTENERS
+allMovies = [];
+db.on("child_added", s => {
+  const m = s.val(); 
+  m.key = s.key;
+  allMovies.push(m);
+  render();
+});
+db.on("child_changed", s => {
+  const m = s.val();
+  m.key = s.key;
+  allMovies = allMovies.map(x => x.key === m.key ? m : x);
+  render();
+});
+db.on("child_removed", s => {
+  const k = s.key;
+  allMovies = allMovies.filter(x => x.key !== k);
+  render();
+});
+
+// RENDER
+function render(){
+  movieGrid.innerHTML="";
+  const q=searchInput.value.toLowerCase();
+  const g=document.querySelector(".genre-item.active").textContent;
+
+  allMovies.forEach(m=>{
+    if(g!="All" && m.genre!=g) return;
+    if(!m.title.toLowerCase().includes(q)) return;
+
+    const c=document.createElement("div");
+    c.className="movie-card";
+    c.innerHTML=`
+      ${m.poster?`<img src="${m.poster}">`:""}
+      <div class="title">${m.title}</div>
+      <div class="genre-label">${m.genre}</div>
+      ${isAdmin?`
+      <button class="option-btn">⋮</button>
+      <div class="option-menu">
+        <button onclick='editMovie(${JSON.stringify(m)})'>Edit</button>
+        <button onclick='delMovie("${m.key}")'>Delete</button>
+      </div>`:""}
+    `;
+    if(m.poster) c.querySelector("img").onclick=()=>show(m);
+    if(isAdmin){
+      c.querySelector(".option-btn").onclick=e=>{
+        e.stopPropagation();
+        c.querySelector(".option-menu").style.display="block";
+      };
+    }
+    movieGrid.appendChild(c);
+  });
+}
+
+// SEARCH
+function searchMovies(){render();}
+
+// MODAL
+function show(m){
+  currentMovie = m;
+  if(m.poster){
+    mPoster.src = m.poster;
+    mPoster.style.display = "block";
+  } else {
+    mPoster.style.display = "none";
+  }
+  mTitle.textContent = m.title;
+  mReview.textContent = m.review;
+  btn1080.disabled = !m.links["1080p"];
+  btn720.disabled = !m.links["720p"];
+  modal.style.display = "flex";
+}
+
+function openLink(q){
+  window.open(currentMovie.links[q],"_blank");
+}
+
+// ADMIN
+devBtn.onclick=()=>{
+  if(prompt("Admin Password")==adminPassword){
+    isAdmin=true;
+    devForm.style.display="block";
+    render();
+  }
+};
+
+// SAVE MOVIE
+function saveMovie(){
+  if(!title.value.trim()){
+    return alert("Movie title is required!");
+  }
+  const data={
+    title: title.value,
+    genre: genre.value,
+    poster: poster.value || "",
+    review: review.value,
+    links: { "1080p": l1080.value, "720p": l720.value }
+  };
+  
+  if(editKey){
+    db.child(editKey).set(data);
+    editKey = null;
+  } else {
+    db.push(data); // child_added listener will handle adding to grid
+  }
+
+  devForm.style.display = "none";
+}
+
+// EDIT
+function editMovie(m){
+  editKey = m.key;
+  title.value = m.title;
+  genre.value = m.genre;
+  poster.value = m.poster || "";
+  review.value = m.review;
+  l1080.value = m.links["1080p"];
+  l720.value = m.links["720p"];
+  devForm.style.display = "block";
+}
+
+// DELETE
+function delMovie(k){
+  if(confirm("Delete?")){
+    db.child(k).remove();
+  }
+}
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
